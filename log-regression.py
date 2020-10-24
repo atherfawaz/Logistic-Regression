@@ -1,9 +1,8 @@
+import copy
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import math
-import random
-import copy
-import matplotlib.pyplot as plt
 
 
 def normalize_data(array):
@@ -15,13 +14,14 @@ def normalize_data(array):
 def cost_function(X, Y, theta):
     samples = Y.shape[0]
     h = sigmoid(np.dot(X, theta))
-    cost = (1/samples) * np.sum(((np.transpose(-Y).dot(np.log(h))) -
-                                 (np.transpose(1 - Y).dot(np.log(1 - h)))))
+    cost = (1 / samples) * np.sum(((np.transpose(-Y).dot(np.log(h))) -
+                                   (np.transpose(1 - Y).dot(np.log(1 - h)))))
     return cost
 
 
 def gradient_descent(X, Y, theta, learning_rate, iterations):
     samples = Y.shape[0]
+    cost = 0
     for i in range(iterations):
         h = sigmoid(np.dot(X, theta))
         theta = theta - (learning_rate / samples) * (X.transpose().dot(h - Y))
@@ -63,7 +63,6 @@ def predict(features, theta, x_mean, x_std):
 
 
 def main():
-
     # fetch dataset
     X, Y = fetch_dataset('ex2data1.txt')
     n_norm = copy.deepcopy(X)

@@ -1,9 +1,8 @@
+import copy
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import math
-import random
-import copy
-import matplotlib.pyplot as plt
 
 
 def feature_mapping(X1, X2, degree=6):
@@ -39,7 +38,6 @@ def plotData(X, Y):
 
 
 def plotDecisionBoundary(theta, X, y):
-
     # make sure theta is a numpy array
     theta = np.array(theta)
 
@@ -57,14 +55,13 @@ def plotDecisionBoundary(theta, X, y):
             z[i, j] = np.dot(feature_mapping(ui, vj), theta)
 
     z = z.T  # important to transpose z before calling contour
-    # print(z)
 
     # Plot z = 0
     plt.contour(u, v, z, levels=[0], linewidths=2, colors='g')
     levels = [np.min(z), 0, np.max(z)]
     if not (np.min(z) < 0 < np.max(z)):
         levels.sort()
-    plt.contourf(u, v, z, levels=levels, cmap='Blues', alpha=0.4)
+    plt.contourf(u, v, z, levels=levels, cmap='Greens', alpha=0.4)
     plt.show()
 
 
@@ -77,23 +74,24 @@ def normalize_data(array):
 def regularized_cost_function(X, Y, theta, lambda_term):
     samples = Y.shape[0]
     h = sigmoid(np.dot(X, theta))
-    cost = (1/samples) * np.sum(((np.transpose(-Y).dot(np.log(h))) -
-                                 (np.transpose(1 - Y).dot(np.log(1 - h)))))
-    cost += (lambda_term/2*samples) * \
-        (np.transpose(theta[1:][:]).dot(theta[1:][:]))
+    cost = (1 / samples) * np.sum(((np.transpose(-Y).dot(np.log(h))) -
+                                   (np.transpose(1 - Y).dot(np.log(1 - h)))))
+    cost += (lambda_term / samples) * np.sum(np.square(theta[1:, :]))
+
     return cost
 
 
 def gradient_descent(X, Y, theta, learning_rate, iterations, lambda_term):
     samples = Y.shape[0]
+    cost = 0
     for i in range(iterations):
         h = sigmoid(np.dot(X, theta))
-        gradient = (1/samples) * (X.transpose().dot(h - Y))
-        theta[0, 0] = theta[0, 0] - (learning_rate) * gradient[0, 0]
-        theta[1:, :] = (theta[1:, :] - (learning_rate) *
-                        (gradient[1:, :] + (lambda_term/samples * theta[1:, :])))
+        gradient = (1 / samples) * (X.transpose().dot(h - Y))
+        theta[0, 0] = theta[0, 0] - learning_rate * gradient[0, 0]
+        theta[1:, :] = (theta[1:, :] - learning_rate *
+                        (gradient[1:, :] + (lambda_term / samples * theta[1:, :])))
         cost = regularized_cost_function(X, Y, theta, lambda_term)
-        #print('Cost: ', cost)
+        print(cost)
     return theta, cost
 
 
@@ -131,14 +129,9 @@ def predict(features, theta, x_mean, x_std):
 
 
 def main():
-
     # fetch dataset
     X, Y = fetch_dataset('ex2data2.txt')
-    n_norm = copy.deepcopy(X)
-
-    sample_count = len(Y)
-
-    #X, x_mean, x_std = normalize_data(X)
+    X_original = copy.deepcopy(X)
 
     # feature mapping
     X = feature_mapping(
@@ -149,22 +142,20 @@ def main():
     feature_count = X.shape[1]
     theta = np.zeros((feature_count, 1))
 
-    # plotting data
-    # plot_data(X, Y)
-
-    # hyperparameters
+    # hyper parameters
     regularizer = 0
-    learning_rate = 0.1
-    iterations = 10000
+    learning_rate = 1
+    iterations = 1000000
 
     # running gradient descent
     theta, cost = gradient_descent(
         X, Y, theta, learning_rate, iterations, regularizer)
 
     p = np.round(sigmoid(X.dot(theta)))
-    print('Accuracy: %.1f %%' % (np.mean(p == Y) * 100))
+    acc = np.mean(p == Y) * 100
+    print(f'Accuracy: {acc:.2f}%')
 
-    plotDecisionBoundary(theta, n_norm, Y)
+    plotDecisionBoundary(theta, X_original, Y)
 
 
 if __name__ == "__main__":
