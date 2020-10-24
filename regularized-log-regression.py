@@ -9,24 +9,6 @@ import matplotlib.pyplot as plt
 def feature_mapping(X1, X2, degree=6):
     X1 = np.array(X1)
     X2 = np.array(X2)
-    """
-    Maps the two input features to quadratic features used in the regularization exercise.
-    Returns a new feature array with more features, comprising of
-    X1, X2, X1.^2, X2.^2, X1*X2, X1*X2.^2, etc..
-    Parameters
-    ----------
-    X1 : array_like
-        A vector of shape (m, 1), containing one feature for all examples.
-    X2 : array_like
-        A vector of shape (m, 1), containing a second feature for all examples.
-        Inputs X1, X2 must be the same size.
-    degree: int, optional
-        The polynomial degree.
-    Returns
-    -------
-    : array_like
-        A matrix of of m rows, and columns depend on the degree of polynomial.
-    """
     if X1.ndim > 0:
         out = [np.ones(X1.shape[0])]
     else:
@@ -40,6 +22,50 @@ def feature_mapping(X1, X2, degree=6):
         return np.stack(out, axis=1)
     else:
         return np.array(out)
+
+
+def plotData(X, Y):
+    # Here is the grid range
+    Y = np.array(np.transpose(Y))
+    Y = Y.flatten()
+    class_a = Y == 1
+    class_b = Y == 0
+    plt.plot(X[class_a, 0], X[class_a, 1], '+')
+    plt.plot(X[class_b, 0], X[class_b, 1], 'o')
+    plt.title('Microchips')
+    plt.xlabel('Microchip Test 1')
+    plt.ylabel('Microchip Test 2')
+    plt.legend(['y = 1', 'y = 0'], loc='upper right')
+
+
+def plotDecisionBoundary(theta, X, y):
+
+    # make sure theta is a numpy array
+    theta = np.array(theta)
+
+    # Plot Data (remember first column in X is the intercept)
+    plotData(X, y)
+
+    # Here is the grid range
+    u = np.linspace(-1, 1.5, 50)
+    v = np.linspace(-1, 1.5, 50)
+
+    z = np.zeros((u.size, v.size))
+    # Evaluate z = theta*x over the grid
+    for i, ui in enumerate(u):
+        for j, vj in enumerate(v):
+            z[i, j] = np.dot(feature_mapping(ui, vj), theta)
+
+    z = z.T  # important to transpose z before calling contour
+    # print(z)
+
+    # Plot z = 0
+    plt.contour(u, v, z, levels=[0], linewidths=2, colors='g')
+    levels = [np.min(z), 0, np.max(z)]
+    if not (np.min(z) < 0 < np.max(z)):
+        levels.sort()
+    plt.contourf(u, v, z, levels=levels, cmap='Blues', alpha=0.4)
+    plt.show()
 
 
 def normalize_data(array):
@@ -67,7 +93,7 @@ def gradient_descent(X, Y, theta, learning_rate, iterations, lambda_term):
         theta[1:, :] = (theta[1:, :] - (learning_rate) *
                         (gradient[1:, :] + (lambda_term/samples * theta[1:, :])))
         cost = regularized_cost_function(X, Y, theta, lambda_term)
-        print('Cost: ', cost)
+        #print('Cost: ', cost)
     return theta, cost
 
 
@@ -112,23 +138,23 @@ def main():
 
     sample_count = len(Y)
 
+    X, x_mean, x_std = normalize_data(X)
+
     # feature mapping
     X = feature_mapping(
         np.array(X[:, 0]),
         np.array(X[:, 1]), degree=6)
 
     # norms
-    # X, x_mean, x_std = normalize_data(X)
-    # X = np.hstack([np.ones((sample_count, 1)), X])
     feature_count = X.shape[1]
-    theta = np.random.rand(feature_count, 1)
+    theta = np.zeros((feature_count, 1))
 
     # plotting data
     # plot_data(X, Y)
 
     # hyperparameters
     regularizer = 1
-    learning_rate = 0.01
+    learning_rate = 0.1
     iterations = 10000
 
     # running gradient descent
@@ -136,7 +162,9 @@ def main():
         X, Y, theta, learning_rate, iterations, regularizer)
 
     p = np.round(sigmoid(X.dot(theta)))
-    print('Train Accuracy: %.1f %%' % (np.mean(p == Y) * 100))
+    print('Accuracy: %.1f %%' % (np.mean(p == Y) * 100))
+
+    plotDecisionBoundary(theta, n_norm, Y)
 
 
 if __name__ == "__main__":
