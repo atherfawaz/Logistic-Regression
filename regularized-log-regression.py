@@ -138,7 +138,7 @@ def main():
 
     sample_count = len(Y)
 
-    X, x_mean, x_std = normalize_data(X)
+    #X, x_mean, x_std = normalize_data(X)
 
     # feature mapping
     X = feature_mapping(
@@ -153,7 +153,7 @@ def main():
     # plot_data(X, Y)
 
     # hyperparameters
-    regularizer = 1
+    regularizer = 0
     learning_rate = 0.1
     iterations = 10000
 
