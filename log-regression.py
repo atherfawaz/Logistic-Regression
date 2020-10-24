@@ -79,10 +79,6 @@ def main():
     X = np.hstack([np.ones((sample_count, 1)), X])
     theta = np.random.rand(feature_count + 1, 1)
 
-    print(X.shape)
-    print(Y.shape)
-    print(theta.shape)
-
     # hyperparameters
     learning_rate = 0.5
     iterations = 2000
