@@ -1,26 +1,21 @@
-import copy
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import copy
+import matplotlib.pyplot as plt
 
 
-def feature_mapping(X1, X2, degree=6):
+def feature_mapping(X1, X2, degree):
     X1 = np.array(X1)
     X2 = np.array(X2)
-    if X1.ndim > 0:
-        out = [np.ones(X1.shape[0])]
-    else:
-        out = [np.ones(1)]
+    dims = X1.ndim
+
+    result = [np.ones(X1.shape[0])] if dims > 0 else [np.ones(1)]
 
     for i in range(1, degree + 1):
         for j in range(i + 1):
-            out.append((X1 ** (i - j)) * (X2 ** j))
+            result.append((X1 ** (i - j)) * (X2 ** j))
 
-    if X1.ndim > 0:
-        return np.stack(out, axis=1)
-    else:
-        return np.array(out)
+    return np.stack(result, axis=1) if dims > 0 else np.array(result)
 
 
 def plotData(X, Y):
@@ -34,34 +29,30 @@ def plotData(X, Y):
     plt.title('Microchips')
     plt.xlabel('Microchip Test 1')
     plt.ylabel('Microchip Test 2')
-    plt.legend(['y = 1', 'y = 0'], loc='upper right')
+    plt.legend(['y = 1', 'y = 0', 'Decision Boundary'], loc='upper right')
 
 
-def plotDecisionBoundary(theta, X, y):
-    # make sure theta is a numpy array
+def plot_decision_boundary(theta, X, Y):
+    # generating grid
     theta = np.array(theta)
+    plotData(X, Y)
+    x_axis = np.linspace(-1, 1.5, 50)
+    y_axis = np.linspace(-1, 1.5, 50)
 
-    # Plot Data (remember first column in X is the intercept)
-    plotData(X, y)
-
-    # Here is the grid range
-    u = np.linspace(-1, 1.5, 50)
-    v = np.linspace(-1, 1.5, 50)
-
-    z = np.zeros((u.size, v.size))
-    # Evaluate z = theta*x over the grid
-    for i, ui in enumerate(u):
-        for j, vj in enumerate(v):
-            z[i, j] = np.dot(feature_mapping(ui, vj), theta)
-
-    z = z.T  # important to transpose z before calling contour
+    # calculating z axis
+    z = np.zeros((x_axis.size, y_axis.size))
+    for i, x1 in enumerate(x_axis):
+        for j, x2 in enumerate(y_axis):
+            z[i, j] = np.dot(feature_mapping(x1, x2, degree=6), theta)
 
     # Plot z = 0
-    plt.contour(u, v, z, levels=[0], linewidths=2, colors='g')
+    plt.contour(x_axis, y_axis, np.transpose(
+        z), levels=[0], linewidths=2, colors='b')
     levels = [np.min(z), 0, np.max(z)]
     if not (np.min(z) < 0 < np.max(z)):
         levels.sort()
-    plt.contourf(u, v, z, levels=levels, cmap='Greens', alpha=0.4)
+    plt.contourf(x_axis, y_axis, np.transpose(z), levels=levels,
+                 cmap='Blues', alpha=0.5)
     plt.show()
 
 
@@ -91,7 +82,6 @@ def gradient_descent(X, Y, theta, learning_rate, iterations, lambda_term):
         theta[1:, :] = (theta[1:, :] - learning_rate *
                         (gradient[1:, :] + (lambda_term / samples * theta[1:, :])))
         cost = regularized_cost_function(X, Y, theta, lambda_term)
-        print(cost)
     return theta, cost
 
 
@@ -128,6 +118,24 @@ def predict(features, theta, x_mean, x_std):
     return sigmoid(np.dot(features, theta))
 
 
+def logistic_regression(X, Y, X_original, theta, reg, lr, it):
+
+    print('HYPERPARAMETERS:')
+    print('Iterations: ', it)
+    print('Learning Rate: ', lr)
+    print('Regularization Parameter: ', reg)
+    print()
+
+    # running gradient descent
+    theta, cost = gradient_descent(
+        X, Y, theta, lr, it, reg)
+
+    predictions = np.round(sigmoid(X.dot(theta)))
+    acc = np.mean(predictions == Y) * 100
+    print(f'Accuracy: {acc:.2f}%')
+    plot_decision_boundary(theta, X_original, Y)
+
+
 def main():
     # fetch dataset
     X, Y = fetch_dataset('ex2data2.txt')
@@ -142,20 +150,12 @@ def main():
     feature_count = X.shape[1]
     theta = np.zeros((feature_count, 1))
 
-    # hyper parameters
-    regularizer = 0
-    learning_rate = 1
-    iterations = 1000000
-
-    # running gradient descent
-    theta, cost = gradient_descent(
-        X, Y, theta, learning_rate, iterations, regularizer)
-
-    p = np.round(sigmoid(X.dot(theta)))
-    acc = np.mean(p == Y) * 100
-    print(f'Accuracy: {acc:.2f}%')
-
-    plotDecisionBoundary(theta, X_original, Y)
+    # best fit
+    logistic_regression(X, Y, X_original, theta, reg=1, lr=0.1, it=1000)
+    # under fit
+    logistic_regression(X, Y, X_original, theta, reg=100, lr=0.01, it=5000)
+    # over fit
+    logistic_regression(X, Y, X_original, theta, reg=0, lr=1, it=1000000)
 
 
 if __name__ == "__main__":

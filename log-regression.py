@@ -1,5 +1,4 @@
 import copy
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -31,8 +30,7 @@ def gradient_descent(X, Y, theta, learning_rate, iterations):
 
 def sigmoid(Z):
     Z = np.array(Z)
-    result = (1 / (1 + np.exp(-Z)))
-    return result
+    return (1 / (1 + np.exp(-Z)))
 
 
 def fetch_dataset(file_name, delimiter=','):
@@ -42,18 +40,23 @@ def fetch_dataset(file_name, delimiter=','):
     return np.array(X), np.array(Y)
 
 
-def plot_data(X, Y, predicted=None):
+def plot_data(X, Y, predicted=False):
     Y = np.array(np.transpose(Y))
     Y = Y.flatten()
     class_a = Y == 1
     class_b = Y == 0
-    plt.plot(X[class_a, 0], X[class_a, 1], '+')
-    plt.plot(X[class_b, 0], X[class_b, 1], 'o')
+    if predicted:
+        plt.plot(X[class_a, 1], X[class_a, 2], '+')
+        plt.plot(X[class_b, 1], X[class_b, 2], 'o')
+    else:
+        plt.plot(X[class_a, 0], X[class_a, 1], '+')
+        plt.plot(X[class_b, 0], X[class_b, 1], 'o')
     plt.title('Exam Scores')
     plt.xlabel('Exam 1 Score')
     plt.ylabel('Exam 2 Score')
     plt.legend(['Admitted', 'Not Admitted'], loc='upper right')
-    plt.show()
+    if not predicted:
+        plt.show()
 
 
 def predict(features, theta, x_mean, x_std):
@@ -62,10 +65,22 @@ def predict(features, theta, x_mean, x_std):
     return sigmoid(np.dot(features, theta))
 
 
+def plot_decision_boundary(X, Y, theta):
+    plot_data(X, Y, predicted=True)
+    plot_x = np.array([np.min(X[:, 1]) - 2, np.max(X[:, 1]) + 2])
+    plot_y = (-1. / theta[2]) * (theta[1] * plot_x + theta[0])
+    plt.plot(plot_x, plot_y)
+    plt.legend(['Admitted', 'Not admitted',
+                'Decision Boundary'], loc='upper right')
+    plt.xlim([-2, 2])
+    plt.ylim([-2, 2])
+    plt.show()
+
+
 def main():
     # fetch dataset
     X, Y = fetch_dataset('ex2data1.txt')
-    n_norm = copy.deepcopy(X)
+    X_original = copy.deepcopy(X)
 
     sample_count = len(Y)
     feature_count = X.shape[1]
@@ -92,6 +107,9 @@ def main():
     features = np.array([45, 85])
     prediction = predict(features, theta, x_mean, x_std)
     print('For a student with a score of 45 in exam 1 and 85 in exam 2, the probability of admission is: ', prediction)
+
+    # plot decision boundary
+    plot_decision_boundary(X, Y, theta)
 
 
 if __name__ == "__main__":
